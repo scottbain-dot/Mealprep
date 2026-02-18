@@ -599,6 +599,7 @@ const DAY_FULL = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday',
 
 function getMonday(offset = 0) {
   const d = new Date();
+  // Use local date components to avoid timezone issues
   const day = d.getDay();
   const diff = d.getDate() - ((day === 0 ? 7 : day) - 1) + (offset * 7);
   return new Date(d.getFullYear(), d.getMonth(), diff);
@@ -614,7 +615,15 @@ function getWeekDates(offset) {
 }
 
 function fmtDate(d) {
-  return d.toISOString().split('T')[0];
+  // Use local date to avoid timezone shift
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${dd}`;
+}
+
+function todayStr() {
+  return fmtDate(new Date());
 }
 
 function weekLabel(offset) {
@@ -635,7 +644,7 @@ function changeWeek(dir) {
 // ============================================
 function renderPlan() {
   const dates = getWeekDates(state.weekOffset);
-  const today = fmtDate(new Date());
+  const today = todayStr();
   
   // Week pills
   const pillsHtml = dates.map((d, i) => {

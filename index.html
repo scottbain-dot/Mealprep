@@ -520,7 +520,7 @@ body {
 // ============================================
 // CONFIG
 // ============================================
-const API = 'https://script.google.com/macros/s/AKfycbw10h1REvXDxcmrD78eWHFMCu2niiRLD_4wxTbxu51LSq13grrdsjj3wrQO5jZqeZVbkw/exec';
+const API = 'https://script.google.com/macros/s/AKfycbzOH1FmYtdIa6JbFzr9tQ-0qOgGuRHV8G8Do_XVQT6SnXi-BoNE4hAwlKbGfByo46U1PA/exec';
 const MOB_CATS = ['meat & fish','fruit & veg','other','spices & herbs','sauces & condiments','dairy & eggs','storecupboard','seafood','bakery','frozen','baking ingredients','drinks'];
 
 // ============================================
@@ -547,12 +547,11 @@ async function apiGet(action, params = {}) {
 }
 
 async function apiPost(body) {
-  const res = await fetch(API, {
-    method: 'POST',
-    redirect: 'follow',
-    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-    body: JSON.stringify(body)
-  });
+  // Google Apps Script redirects POST with 302 which breaks fetch
+  // Solution: send as GET with encoded payload
+  const url = new URL(API);
+  url.searchParams.set('payload', JSON.stringify(body));
+  const res = await fetch(url, { redirect: 'follow' });
   return res.json();
 }
 

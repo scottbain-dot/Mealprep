@@ -1,0 +1,1053 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Our Kitchen">
+<title>Our Kitchen</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@400;500;600;700&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #faf8f5;
+  --bg-warm: #f5f0ea;
+  --card: #ffffff;
+  --text: #1a1a1a;
+  --text-mid: #6b6560;
+  --text-light: #a09890;
+  --terracotta: #c4593a;
+  --terracotta-soft: #f2ddd5;
+  --sage: #6b8f71;
+  --sage-soft: #dce8dd;
+  --ochre: #d4a24e;
+  --ochre-soft: #f5ebd5;
+  --ink: #2c2825;
+  --border: #eae5df;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.04);
+  --shadow: 0 2px 16px rgba(0,0,0,0.06);
+  --shadow-lg: 0 8px 30px rgba(0,0,0,0.1);
+  --radius: 14px;
+  --radius-lg: 20px;
+  --nav-height: 72px;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+body {
+  font-family: 'Outfit', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  min-height: 100dvh;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+  padding-bottom: calc(var(--nav-height) + 20px);
+}
+
+/* ===== LOADING ===== */
+#loadingScreen {
+  position: fixed; inset: 0; background: var(--bg);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  z-index: 999; transition: opacity 0.4s ease;
+}
+#loadingScreen.hidden { opacity: 0; pointer-events: none; }
+#loadingScreen h1 { font-family: 'Fraunces', serif; font-size: 2rem; color: var(--ink); }
+#loadingScreen p { color: var(--text-light); font-size: 0.85rem; margin-top: 0.5rem; }
+.loader-dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--terracotta); margin: 0 3px; animation: bounce 1.2s infinite; }
+.loader-dot:nth-child(2) { animation-delay: 0.15s; }
+.loader-dot:nth-child(3) { animation-delay: 0.3s; }
+@keyframes bounce { 0%,80%,100% { transform: translateY(0); } 40% { transform: translateY(-8px); } }
+
+/* ===== HEADER ===== */
+.header {
+  padding: 1rem 1.25rem 0.5rem;
+  position: sticky; top: 0; z-index: 40;
+  background: linear-gradient(var(--bg) 85%, transparent);
+  backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+}
+
+.header-top { display: flex; justify-content: space-between; align-items: center; }
+.header h1 { font-family: 'Fraunces', serif; font-size: 1.6rem; font-weight: 600; color: var(--ink); letter-spacing: -0.5px; }
+.header-actions { display: flex; gap: 0.5rem; }
+.header-btn {
+  width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--border);
+  background: var(--card); display: flex; align-items: center; justify-content: center;
+  cursor: pointer; transition: all 0.2s;
+}
+.header-btn:active { transform: scale(0.92); }
+.header-btn svg { width: 18px; height: 18px; stroke: var(--text-mid); stroke-width: 1.8; fill: none; }
+
+.week-strip {
+  display: flex; align-items: center; gap: 0.5rem; margin-top: 0.75rem;
+  padding-bottom: 0.5rem;
+}
+.week-strip .arrow {
+  width: 28px; height: 28px; border-radius: 50%; border: none;
+  background: transparent; display: flex; align-items: center; justify-content: center;
+  cursor: pointer; font-size: 1.1rem; color: var(--text-mid); transition: background 0.2s;
+}
+.week-strip .arrow:active { background: var(--border); }
+.week-label { font-weight: 500; font-size: 0.9rem; color: var(--ink); flex-shrink: 0; }
+.week-pills {
+  display: flex; gap: 4px; flex: 1; justify-content: flex-end;
+}
+.day-pill {
+  display: flex; flex-direction: column; align-items: center; gap: 1px;
+  padding: 4px 8px; border-radius: 10px; cursor: pointer; transition: all 0.2s;
+  min-width: 36px; border: none; background: none; font-family: 'Outfit', sans-serif;
+}
+.day-pill .dn { font-size: 0.55rem; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-light); }
+.day-pill .dd { font-size: 0.85rem; font-weight: 600; color: var(--text-mid); }
+.day-pill.today { background: var(--terracotta); border-radius: 12px; }
+.day-pill.today .dn, .day-pill.today .dd { color: white; }
+.day-pill.has-meal::after {
+  content: ''; width: 4px; height: 4px; border-radius: 50%;
+  background: var(--sage); display: block; margin-top: 1px;
+}
+.day-pill.today.has-meal::after { background: rgba(255,255,255,0.6); }
+
+/* ===== VIEWS ===== */
+.view { display: none; animation: fadeIn 0.3s ease; }
+.view.active { display: block; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+/* ===== PLAN VIEW ===== */
+.plan-section { padding: 0.5rem 1.25rem; }
+
+.day-block { margin-bottom: 1rem; }
+.day-block-header {
+  display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem;
+}
+.day-block-name {
+  font-family: 'Fraunces', serif; font-size: 1.1rem; font-weight: 600; color: var(--ink);
+}
+.day-block-date { font-size: 0.75rem; color: var(--text-light); }
+.today-badge {
+  font-size: 0.6rem; font-weight: 600; text-transform: uppercase; letter-spacing: 1px;
+  background: var(--terracotta); color: white; padding: 2px 8px; border-radius: 20px;
+}
+
+.meal-card {
+  background: var(--card); border-radius: var(--radius); padding: 1rem;
+  box-shadow: var(--shadow-sm); margin-bottom: 6px;
+  display: flex; align-items: center; gap: 0.75rem;
+  cursor: pointer; transition: all 0.2s; border: 1px solid transparent;
+}
+.meal-card:active { transform: scale(0.985); border-color: var(--border); }
+
+.meal-emoji { font-size: 1.6rem; width: 42px; height: 42px; display: flex; align-items: center; justify-content: center; background: var(--bg-warm); border-radius: 12px; flex-shrink: 0; }
+.meal-details { flex: 1; min-width: 0; }
+.meal-type-label { font-size: 0.6rem; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: var(--text-light); }
+.meal-card-name { font-size: 0.95rem; font-weight: 500; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.meal-card-meta { font-size: 0.7rem; color: var(--text-light); margin-top: 1px; }
+
+.source-tag {
+  font-size: 0.55rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;
+  padding: 3px 7px; border-radius: 6px; flex-shrink: 0;
+}
+.src-mob { background: var(--ink); color: white; }
+.src-own { background: var(--sage-soft); color: var(--sage); }
+.src-out { background: var(--ochre-soft); color: var(--ochre); }
+
+.empty-slot {
+  border: 2px dashed var(--border); border-radius: var(--radius);
+  padding: 0.85rem 1rem; display: flex; align-items: center; gap: 0.5rem;
+  cursor: pointer; margin-bottom: 6px; transition: border-color 0.2s;
+}
+.empty-slot:active { border-color: var(--terracotta); }
+.empty-slot svg { width: 18px; height: 18px; stroke: var(--text-light); stroke-width: 2; fill: none; }
+.empty-slot span { font-size: 0.8rem; color: var(--text-light); }
+
+/* ===== RECIPE DETAIL ===== */
+.recipe-detail {
+  position: fixed; inset: 0; background: var(--bg); z-index: 80;
+  overflow-y: auto; -webkit-overflow-scrolling: touch;
+  transform: translateX(100%); transition: transform 0.35s cubic-bezier(.4,0,.2,1);
+}
+.recipe-detail.open { transform: translateX(0); }
+
+.rd-header {
+  position: sticky; top: 0; z-index: 2; padding: 1rem 1.25rem;
+  background: linear-gradient(var(--bg) 80%, transparent);
+  display: flex; justify-content: space-between; align-items: center;
+}
+.rd-back {
+  width: 36px; height: 36px; border-radius: 50%; background: var(--card);
+  border: 1px solid var(--border); display: flex; align-items: center; justify-content: center;
+  cursor: pointer; transition: all 0.2s;
+}
+.rd-back:active { transform: scale(0.9); }
+.rd-back svg { width: 20px; height: 20px; stroke: var(--ink); stroke-width: 2; fill: none; }
+
+.rd-hero {
+  padding: 0 1.25rem; margin-bottom: 1.5rem;
+}
+.rd-emoji { font-size: 3.5rem; margin-bottom: 0.5rem; }
+.rd-title { font-family: 'Fraunces', serif; font-size: 1.5rem; font-weight: 700; color: var(--ink); line-height: 1.2; margin-bottom: 0.5rem; }
+.rd-meta { display: flex; gap: 1rem; flex-wrap: wrap; }
+.rd-meta-item {
+  display: flex; align-items: center; gap: 4px;
+  font-size: 0.75rem; color: var(--text-mid);
+}
+.rd-meta-item svg { width: 14px; height: 14px; stroke: currentColor; stroke-width: 2; fill: none; }
+
+.rd-section { padding: 0 1.25rem; margin-bottom: 1.5rem; }
+.rd-section-title {
+  font-family: 'Fraunces', serif; font-size: 1.1rem; font-weight: 600;
+  color: var(--ink); margin-bottom: 0.75rem;
+}
+
+.ingredient-group-title {
+  font-size: 0.65rem; font-weight: 600; text-transform: uppercase;
+  letter-spacing: 1.5px; color: var(--terracotta); margin: 0.75rem 0 0.5rem;
+}
+
+.ingredient-row {
+  display: flex; align-items: center; gap: 0.75rem;
+  padding: 0.5rem 0; border-bottom: 1px solid var(--border);
+}
+.ingredient-check {
+  width: 20px; height: 20px; border-radius: 50%; border: 2px solid var(--border);
+  flex-shrink: 0; cursor: pointer; transition: all 0.2s;
+  display: flex; align-items: center; justify-content: center;
+}
+.ingredient-check.checked { background: var(--sage); border-color: var(--sage); }
+.ingredient-check.checked::after { content: '✓'; color: white; font-size: 0.65rem; font-weight: 700; }
+.ingredient-text { font-size: 0.9rem; color: var(--text); }
+.ingredient-row.checked-row .ingredient-text { text-decoration: line-through; color: var(--text-light); }
+
+.step-item {
+  display: flex; gap: 0.75rem; margin-bottom: 1rem;
+}
+.step-num {
+  width: 28px; height: 28px; border-radius: 50%; background: var(--terracotta);
+  color: white; font-size: 0.75rem; font-weight: 600;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px;
+}
+.step-text { font-size: 0.9rem; line-height: 1.6; color: var(--text); }
+
+.rd-notes {
+  background: var(--ochre-soft); border-radius: var(--radius);
+  padding: 1rem; font-size: 0.85rem; color: var(--text-mid); line-height: 1.5;
+}
+
+.rd-actions {
+  padding: 0 1.25rem 2rem; display: flex; gap: 0.5rem;
+}
+.rd-action-btn {
+  flex: 1; padding: 0.85rem; border-radius: var(--radius); border: 1px solid var(--border);
+  background: var(--card); font-family: 'Outfit', sans-serif; font-size: 0.85rem;
+  font-weight: 500; cursor: pointer; transition: all 0.2s; text-align: center;
+}
+.rd-action-btn:active { transform: scale(0.97); }
+.rd-action-btn.primary { background: var(--terracotta); color: white; border-color: var(--terracotta); }
+
+/* ===== SHOP VIEW ===== */
+.shop-section { padding: 0.5rem 1.25rem; }
+.shop-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
+.shop-count { font-family: 'Fraunces', serif; font-size: 1.2rem; font-weight: 600; color: var(--ink); }
+.shop-actions { display: flex; gap: 0.5rem; }
+.shop-btn {
+  padding: 0.5rem 0.85rem; border-radius: 10px; border: 1px solid var(--border);
+  background: var(--card); font-family: 'Outfit', sans-serif; font-size: 0.75rem;
+  font-weight: 500; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 4px;
+}
+.shop-btn:active { transform: scale(0.95); }
+.shop-btn.accent { background: var(--terracotta); color: white; border-color: var(--terracotta); }
+.shop-btn svg { width: 14px; height: 14px; stroke: currentColor; stroke-width: 2; fill: none; }
+
+.shop-category { margin-bottom: 1.25rem; }
+.shop-cat-title {
+  font-size: 0.6rem; font-weight: 600; text-transform: uppercase; letter-spacing: 2px;
+  color: var(--text-light); margin-bottom: 0.4rem; padding-left: 0.25rem;
+}
+.shop-item {
+  display: flex; align-items: center; gap: 0.75rem;
+  padding: 0.55rem 0.75rem; background: var(--card); border-radius: 12px;
+  margin-bottom: 3px; cursor: pointer; transition: all 0.15s;
+}
+.shop-item:active { background: var(--bg-warm); }
+.shop-item.done { opacity: 0.35; }
+.shop-item.done .shop-item-name { text-decoration: line-through; }
+.shop-check {
+  width: 22px; height: 22px; border-radius: 7px; border: 2px solid var(--border);
+  flex-shrink: 0; display: flex; align-items: center; justify-content: center; transition: all 0.2s;
+}
+.shop-item.done .shop-check { background: var(--sage); border-color: var(--sage); }
+.shop-check-mark { font-size: 0.6rem; color: white; font-weight: 700; opacity: 0; }
+.shop-item.done .shop-check-mark { opacity: 1; }
+.shop-item-name { font-size: 0.88rem; flex: 1; }
+.shop-item-from { font-size: 0.6rem; color: var(--text-light); }
+
+.shop-empty {
+  text-align: center; padding: 3rem 1rem; color: var(--text-light);
+}
+.shop-empty-icon { font-size: 2.5rem; margin-bottom: 0.75rem; }
+.shop-empty p { font-size: 0.85rem; }
+
+/* ===== FAVOURITES VIEW ===== */
+.fav-section { padding: 0.5rem 1.25rem; }
+.fav-header { font-family: 'Fraunces', serif; font-size: 1.2rem; font-weight: 600; color: var(--ink); margin-bottom: 1rem; }
+.fav-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.fav-card {
+  background: var(--card); border-radius: var(--radius); overflow: hidden;
+  box-shadow: var(--shadow-sm); cursor: pointer; transition: all 0.2s;
+}
+.fav-card:active { transform: scale(0.97); }
+.fav-card-img {
+  height: 100px; background: var(--bg-warm);
+  display: flex; align-items: center; justify-content: center; font-size: 2.5rem;
+}
+.fav-card-body { padding: 0.65rem 0.75rem; }
+.fav-card-name { font-size: 0.8rem; font-weight: 600; color: var(--ink); line-height: 1.3; margin-bottom: 0.25rem; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.fav-card-meta { font-size: 0.65rem; color: var(--text-light); display: flex; align-items: center; gap: 0.4rem; }
+
+/* ===== HISTORY VIEW ===== */
+.history-section { padding: 0.5rem 1.25rem; }
+.history-header { font-family: 'Fraunces', serif; font-size: 1.2rem; font-weight: 600; color: var(--ink); margin-bottom: 1rem; }
+.history-group { margin-bottom: 1.5rem; }
+.history-group-title { font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 1.5px; color: var(--text-light); margin-bottom: 0.5rem; }
+.history-item {
+  display: flex; align-items: center; gap: 0.75rem;
+  padding: 0.6rem 0; border-bottom: 1px solid var(--border);
+}
+.history-day { font-size: 0.7rem; font-weight: 600; color: var(--text-light); min-width: 32px; text-transform: uppercase; }
+.history-name { font-size: 0.88rem; flex: 1; }
+
+/* ===== BOTTOM NAV ===== */
+.bottom-nav {
+  position: fixed; bottom: 0; left: 0; right: 0; height: var(--nav-height);
+  background: rgba(250,248,245,0.92); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+  border-top: 1px solid var(--border);
+  display: flex; justify-content: space-around; align-items: flex-start;
+  padding-top: 8px; z-index: 50;
+}
+.nav-btn {
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  cursor: pointer; border: none; background: none; padding: 4px 16px;
+  font-family: 'Outfit', sans-serif; transition: all 0.2s;
+}
+.nav-btn svg { width: 22px; height: 22px; stroke: var(--text-light); stroke-width: 1.8; fill: none; transition: all 0.2s; }
+.nav-btn span { font-size: 0.6rem; font-weight: 500; color: var(--text-light); transition: color 0.2s; }
+.nav-btn.active svg { stroke: var(--terracotta); }
+.nav-btn.active span { color: var(--terracotta); font-weight: 600; }
+
+/* ===== MODAL ===== */
+.modal-bg {
+  display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.35);
+  backdrop-filter: blur(4px); z-index: 90; align-items: flex-end; justify-content: center;
+}
+.modal-bg.open { display: flex; }
+.modal-sheet {
+  background: var(--bg); border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  width: 100%; max-width: 500px; max-height: 85vh; overflow-y: auto;
+  padding: 1.25rem; animation: sheetUp 0.3s ease;
+}
+@keyframes sheetUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+.modal-bar { width: 36px; height: 4px; border-radius: 2px; background: var(--border); margin: 0 auto 1rem; }
+.modal-title { font-family: 'Fraunces', serif; font-size: 1.2rem; font-weight: 600; margin-bottom: 1rem; }
+.modal-input {
+  width: 100%; padding: 0.7rem 1rem; border: 1px solid var(--border); border-radius: 12px;
+  font-size: 0.9rem; font-family: 'Outfit', sans-serif; background: var(--card);
+  margin-bottom: 0.6rem; outline: none; transition: border-color 0.2s;
+}
+.modal-input:focus { border-color: var(--terracotta); }
+.modal-textarea {
+  width: 100%; min-height: 120px; padding: 0.7rem 1rem; border: 2px dashed var(--border);
+  border-radius: 12px; font-size: 0.85rem; font-family: 'Outfit', sans-serif;
+  background: var(--card); margin-bottom: 0.6rem; outline: none; resize: vertical;
+  transition: border-color 0.2s;
+}
+.modal-textarea:focus { border-color: var(--terracotta); border-style: solid; }
+.pill-row { display: flex; gap: 6px; margin-bottom: 1rem; flex-wrap: wrap; }
+.pill {
+  padding: 0.45rem 0.9rem; border-radius: 20px; font-size: 0.8rem; font-weight: 500;
+  border: 1px solid var(--border); background: var(--card); cursor: pointer;
+  transition: all 0.2s; font-family: 'Outfit', sans-serif;
+}
+.pill.on { background: var(--ink); color: white; border-color: var(--ink); }
+.modal-save {
+  width: 100%; padding: 0.85rem; border-radius: var(--radius); border: none;
+  background: var(--terracotta); color: white; font-family: 'Outfit', sans-serif;
+  font-size: 0.95rem; font-weight: 600; cursor: pointer; transition: opacity 0.2s;
+}
+.modal-save:active { opacity: 0.85; }
+
+/* ===== TOAST ===== */
+.toast {
+  position: fixed; bottom: calc(var(--nav-height) + 12px); left: 50%;
+  transform: translateX(-50%) translateY(60px); background: var(--ink); color: white;
+  padding: 0.7rem 1.25rem; border-radius: var(--radius); font-size: 0.85rem;
+  font-weight: 500; z-index: 200; transition: transform 0.3s cubic-bezier(.4,0,.2,1);
+  white-space: nowrap; box-shadow: var(--shadow-lg);
+}
+.toast.show { transform: translateX(-50%) translateY(0); }
+
+/* ===== FAB ===== */
+.fab {
+  position: fixed; bottom: calc(var(--nav-height) + 14px); right: 1.25rem;
+  width: 50px; height: 50px; border-radius: 16px; border: none;
+  background: var(--terracotta); color: white;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 4px 16px rgba(196,89,58,0.4); cursor: pointer;
+  transition: all 0.2s; z-index: 45;
+}
+.fab:active { transform: scale(0.9); }
+.fab svg { width: 22px; height: 22px; stroke: white; stroke-width: 2.5; fill: none; }
+
+/* ===== RESPONSIVE ===== */
+@media (min-width: 500px) {
+  .plan-section, .shop-section, .fav-section, .history-section,
+  .header, .rd-hero, .rd-section, .rd-actions { max-width: 480px; margin-left: auto; margin-right: auto; }
+}
+</style>
+</head>
+<body>
+
+<!-- Loading -->
+<div id="loadingScreen">
+  <h1>Our Kitchen</h1>
+  <p>Loading recipes<span class="loader-dot"></span><span class="loader-dot"></span><span class="loader-dot"></span></p>
+</div>
+
+<!-- Header -->
+<div class="header" id="mainHeader">
+  <div class="header-top">
+    <h1>Our Kitchen</h1>
+    <div class="header-actions">
+      <button class="header-btn" onclick="openImportModal()" title="Import from Mob">
+        <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      </button>
+    </div>
+  </div>
+  <div class="week-strip">
+    <button class="arrow" onclick="changeWeek(-1)">‹</button>
+    <span class="week-label" id="weekLabel"></span>
+    <button class="arrow" onclick="changeWeek(1)">›</button>
+    <div class="week-pills" id="weekPills"></div>
+  </div>
+</div>
+
+<!-- Plan View -->
+<div class="view active" id="viewPlan">
+  <div class="plan-section" id="planContent"></div>
+</div>
+
+<!-- Shop View -->
+<div class="view" id="viewShop">
+  <div class="shop-section" id="shopContent"></div>
+</div>
+
+<!-- Favourites View -->
+<div class="view" id="viewFavs">
+  <div class="fav-section" id="favsContent"></div>
+</div>
+
+<!-- History View -->
+<div class="view" id="viewHistory">
+  <div class="history-section" id="historyContent"></div>
+</div>
+
+<!-- Recipe Detail Slide -->
+<div class="recipe-detail" id="recipeDetail"></div>
+
+<!-- FAB -->
+<button class="fab" id="fab" onclick="openAddMealModal()">
+  <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+</button>
+
+<!-- Bottom Nav -->
+<div class="bottom-nav">
+  <button class="nav-btn active" data-view="viewPlan" onclick="switchView('viewPlan',this)">
+    <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+    <span>Plan</span>
+  </button>
+  <button class="nav-btn" data-view="viewShop" onclick="switchView('viewShop',this)">
+    <svg viewBox="0 0 24 24"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 002 1.61h9.72a2 2 0 002-1.61L23 6H6"/></svg>
+    <span>Shop</span>
+  </button>
+  <button class="nav-btn" data-view="viewFavs" onclick="switchView('viewFavs',this)">
+    <svg viewBox="0 0 24 24"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
+    <span>Saved</span>
+  </button>
+  <button class="nav-btn" data-view="viewHistory" onclick="switchView('viewHistory',this)">
+    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+    <span>History</span>
+  </button>
+</div>
+
+<!-- Add Meal Modal -->
+<div class="modal-bg" id="addMealModal" onclick="if(event.target===this)closeModal('addMealModal')">
+  <div class="modal-sheet">
+    <div class="modal-bar"></div>
+    <div class="modal-title">Add a Meal</div>
+    <select class="modal-input" id="mealDay"></select>
+    <select class="modal-input" id="mealTypeSelect">
+      <option value="dinner">🍽️ Dinner</option>
+      <option value="lunch">🥗 Lunch</option>
+      <option value="breakfast">🌅 Breakfast</option>
+    </select>
+    <div style="font-size:0.75rem;color:var(--text-light);margin-bottom:0.4rem;font-weight:500;">Choose a saved recipe or type a new one:</div>
+    <select class="modal-input" id="recipeSelect"><option value="">— Pick a recipe —</option></select>
+    <input class="modal-input" id="customMealName" placeholder="Or type a meal name..." />
+    <input class="modal-input" id="customMealLink" placeholder="Recipe URL (optional)" />
+    <div class="pill-row">
+      <button class="pill on" data-src="mob" onclick="pickSrc('mob')">Mob</button>
+      <button class="pill" data-src="own" onclick="pickSrc('own')">Our Recipe</button>
+      <button class="pill" data-src="out" onclick="pickSrc('out')">Eating Out</button>
+    </div>
+    <button class="modal-save" onclick="saveMeal()">Add to Plan</button>
+  </div>
+</div>
+
+<!-- Import Modal -->
+<div class="modal-bg" id="importModal" onclick="if(event.target===this)closeModal('importModal')">
+  <div class="modal-sheet">
+    <div class="modal-bar"></div>
+    <div class="modal-title">Import from Mob</div>
+    <p style="font-size:0.82rem;color:var(--text-mid);margin-bottom:0.75rem;line-height:1.4;">Paste your Mob shopping list. Category headers will be stripped automatically.</p>
+    <textarea class="modal-textarea" id="importArea" placeholder="Paste Mob shopping list here..."></textarea>
+    <button class="modal-save" onclick="importMobList()">Add to Shopping List</button>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ============================================
+// CONFIG
+// ============================================
+const API = 'https://script.google.com/macros/s/AKfycbxHJ894gqXzfW8i_-yMnfoVAeBYCuUuUdPaCG_XOnx65Z-cbNy2XQvZQpvYH_6jAkIaAw/exec';
+const MOB_CATS = ['meat & fish','fruit & veg','other','spices & herbs','sauces & condiments','dairy & eggs','storecupboard','seafood','bakery','frozen','baking ingredients','drinks'];
+
+// ============================================
+// STATE
+// ============================================
+let state = {
+  recipes: [],
+  plan: [],
+  shopping: [],
+  history: [],
+  weekOffset: 0,
+  currentSrc: 'mob'
+};
+
+// ============================================
+// API HELPERS
+// ============================================
+async function apiGet(action, params = {}) {
+  const url = new URL(API);
+  url.searchParams.set('action', action);
+  Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v));
+  const res = await fetch(url);
+  return res.json();
+}
+
+async function apiPost(body) {
+  const res = await fetch(API, {
+    method: 'POST',
+    body: JSON.stringify(body)
+  });
+  return res.json();
+}
+
+// ============================================
+// DATA LOADING
+// ============================================
+async function loadAll() {
+  try {
+    const [recipesRes, planRes, shopRes, histRes] = await Promise.all([
+      apiGet('getRecipes'),
+      apiGet('getMealPlan'),
+      apiGet('getShoppingList'),
+      apiGet('getHistory')
+    ]);
+    state.recipes = recipesRes.recipes || [];
+    state.plan = planRes.plan || [];
+    state.shopping = shopRes.items || [];
+    state.history = histRes.history || [];
+  } catch (e) {
+    console.error('Load failed:', e);
+    toast('Failed to load — check connection');
+  }
+  document.getElementById('loadingScreen').classList.add('hidden');
+  renderAll();
+}
+
+// ============================================
+// WEEK HELPERS
+// ============================================
+const DAY_NAMES = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+const DAY_FULL = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
+
+function getMonday(offset = 0) {
+  const d = new Date();
+  const day = d.getDay();
+  const diff = d.getDate() - ((day === 0 ? 7 : day) - 1) + (offset * 7);
+  return new Date(d.getFullYear(), d.getMonth(), diff);
+}
+
+function getWeekDates(offset) {
+  const mon = getMonday(offset);
+  return Array.from({length: 7}, (_, i) => {
+    const d = new Date(mon);
+    d.setDate(mon.getDate() + i);
+    return d;
+  });
+}
+
+function fmtDate(d) {
+  return d.toISOString().split('T')[0];
+}
+
+function weekLabel(offset) {
+  if (offset === 0) return 'This Week';
+  if (offset === 1) return 'Next Week';
+  if (offset === -1) return 'Last Week';
+  const dates = getWeekDates(offset);
+  return `${dates[0].toLocaleDateString('en-GB',{day:'numeric',month:'short'})} – ${dates[6].toLocaleDateString('en-GB',{day:'numeric',month:'short'})}`;
+}
+
+function changeWeek(dir) {
+  state.weekOffset += dir;
+  renderAll();
+}
+
+// ============================================
+// PLAN RENDERING
+// ============================================
+function renderPlan() {
+  const dates = getWeekDates(state.weekOffset);
+  const today = fmtDate(new Date());
+  
+  // Week pills
+  const pillsHtml = dates.map((d, i) => {
+    const ds = fmtDate(d);
+    const isToday = ds === today;
+    const hasMeal = state.plan.some(p => p.date === ds);
+    return `<button class="day-pill ${isToday?'today':''} ${hasMeal?'has-meal':''}" onclick="scrollToDay('${ds}')">
+      <span class="dn">${DAY_NAMES[i]}</span><span class="dd">${d.getDate()}</span>
+    </button>`;
+  }).join('');
+  document.getElementById('weekPills').innerHTML = pillsHtml;
+  document.getElementById('weekLabel').textContent = weekLabel(state.weekOffset);
+  
+  // Day blocks
+  let html = '';
+  dates.forEach((d, i) => {
+    const ds = fmtDate(d);
+    const isToday = ds === today;
+    const dayMeals = state.plan.filter(p => p.date === ds);
+    
+    html += `<div class="day-block" id="day-${ds}">`;
+    html += `<div class="day-block-header">
+      <span class="day-block-name">${DAY_FULL[i]}</span>
+      <span class="day-block-date">${d.toLocaleDateString('en-GB',{day:'numeric',month:'short'})}</span>
+      ${isToday ? '<span class="today-badge">Today</span>' : ''}
+    </div>`;
+    
+    const types = ['breakfast','lunch','dinner'];
+    const typesWithMeals = new Set(dayMeals.map(m => m.mealType));
+    
+    // Show planned meals
+    types.forEach(type => {
+      const meal = dayMeals.find(m => m.mealType === type);
+      if (meal) {
+        const recipe = state.recipes.find(r => r.id === meal.recipeId);
+        const emoji = recipe ? recipe.emoji : '🍽️';
+        const source = recipe ? recipe.source : 'own';
+        const srcClass = source === 'mob' ? 'src-mob' : source === 'out' ? 'src-out' : 'src-own';
+        const srcLabel = source === 'mob' ? 'MOB' : source === 'out' ? 'OUT' : 'OURS';
+        
+        html += `<div class="meal-card" onclick="${recipe ? `openRecipe('${recipe.id}')` : ''}">
+          <div class="meal-emoji">${emoji}</div>
+          <div class="meal-details">
+            <div class="meal-type-label">${type}</div>
+            <div class="meal-card-name">${meal.recipeName}</div>
+            ${recipe ? `<div class="meal-card-meta">⏱ ${recipe.totalTime} · ${recipe.servings} servings</div>` : ''}
+          </div>
+          <span class="source-tag ${srcClass}">${srcLabel}</span>
+        </div>`;
+      }
+    });
+    
+    // Empty slot for adding
+    if (dayMeals.length < 3) {
+      html += `<div class="empty-slot" onclick="openAddMealModal('${ds}')">
+        <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        <span>Add a meal</span>
+      </div>`;
+    }
+    
+    html += `</div>`;
+  });
+  
+  document.getElementById('planContent').innerHTML = html;
+}
+
+function scrollToDay(ds) {
+  const el = document.getElementById('day-' + ds);
+  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// ============================================
+// RECIPE DETAIL
+// ============================================
+function openRecipe(id) {
+  const recipe = state.recipes.find(r => r.id === id);
+  if (!recipe) return;
+  
+  const detail = document.getElementById('recipeDetail');
+  const srcClass = recipe.source === 'mob' ? 'src-mob' : recipe.source === 'out' ? 'src-out' : 'src-own';
+  const srcLabel = recipe.source === 'mob' ? 'MOB' : recipe.source === 'out' ? 'OUT' : 'OURS';
+  
+  let ingredientsHtml = '';
+  if (Array.isArray(recipe.ingredients)) {
+    recipe.ingredients.forEach(group => {
+      if (group.section) ingredientsHtml += `<div class="ingredient-group-title">${group.section}</div>`;
+      if (group.items) {
+        group.items.forEach((item, idx) => {
+          ingredientsHtml += `<div class="ingredient-row" onclick="this.classList.toggle('checked-row');this.querySelector('.ingredient-check').classList.toggle('checked')">
+            <div class="ingredient-check"></div>
+            <span class="ingredient-text">${item}</span>
+          </div>`;
+        });
+      }
+    });
+  }
+  
+  let stepsHtml = '';
+  if (Array.isArray(recipe.steps)) {
+    recipe.steps.forEach((step, i) => {
+      stepsHtml += `<div class="step-item">
+        <div class="step-num">${i + 1}</div>
+        <div class="step-text">${step}</div>
+      </div>`;
+    });
+  }
+  
+  detail.innerHTML = `
+    <div class="rd-header">
+      <button class="rd-back" onclick="closeRecipe()">
+        <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+      </button>
+      <span class="source-tag ${srcClass}" style="font-size:0.65rem;">${srcLabel}</span>
+    </div>
+    <div class="rd-hero">
+      <div class="rd-emoji">${recipe.emoji || '🍽️'}</div>
+      <div class="rd-title">${recipe.name}</div>
+      <div class="rd-meta">
+        ${recipe.totalTime ? `<span class="rd-meta-item"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>${recipe.totalTime}</span>` : ''}
+        <span class="rd-meta-item"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>${recipe.servings} servings</span>
+        ${recipe.sourceUrl ? `<span class="rd-meta-item" style="cursor:pointer;color:var(--terracotta);" onclick="window.open('${recipe.sourceUrl}','_blank')"><svg viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>Source</span>` : ''}
+      </div>
+    </div>
+    <div class="rd-section">
+      <div class="rd-section-title">Ingredients</div>
+      ${ingredientsHtml}
+    </div>
+    <div class="rd-section">
+      <div class="rd-section-title">Method</div>
+      ${stepsHtml}
+    </div>
+    ${recipe.notes ? `<div class="rd-section"><div class="rd-notes">💡 ${recipe.notes}</div></div>` : ''}
+    <div class="rd-actions">
+      <button class="rd-action-btn" onclick="addRecipeToShoppingList('${recipe.id}')">🛒 Add to Shop</button>
+      <button class="rd-action-btn primary" onclick="quickPlanRecipe('${recipe.id}')">📅 Plan This</button>
+    </div>
+  `;
+  
+  detail.classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeRecipe() {
+  document.getElementById('recipeDetail').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+async function addRecipeToShoppingList(id) {
+  const recipe = state.recipes.find(r => r.id === id);
+  if (!recipe) return;
+  
+  const items = [];
+  recipe.ingredients.forEach(group => {
+    if (group.items) {
+      group.items.forEach(item => {
+        items.push({ item: item, category: group.section || '', recipeName: recipe.name });
+      });
+    }
+  });
+  
+  const res = await apiPost({ action: 'addShoppingItems', items });
+  if (res.success) {
+    toast(`✅ ${res.added} items added to shop`);
+    const shopRes = await apiGet('getShoppingList');
+    state.shopping = shopRes.items || [];
+    renderShop();
+  }
+}
+
+function quickPlanRecipe(id) {
+  closeRecipe();
+  openAddMealModal(null, id);
+}
+
+// ============================================
+// SHOPPING
+// ============================================
+function renderShop() {
+  const unchecked = state.shopping.filter(i => !i.checked);
+  const checked = state.shopping.filter(i => i.checked);
+  
+  let html = `<div class="shop-header">
+    <span class="shop-count">${unchecked.length} item${unchecked.length !== 1 ? 's' : ''}</span>
+    <div class="shop-actions">
+      ${checked.length > 0 ? `<button class="shop-btn" onclick="clearChecked()">Clear done</button>` : ''}
+      <button class="shop-btn" onclick="generateFromPlan()"><svg viewBox="0 0 24 24"><path d="M1 1h4l2.68 13.39a2 2 0 002 1.61h9.72a2 2 0 002-1.61L23 6H6"/></svg>From plan</button>
+      <button class="shop-btn accent" onclick="openImportModal()"><svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Import</button>
+    </div>
+  </div>`;
+  
+  if (state.shopping.length === 0) {
+    html += `<div class="shop-empty"><div class="shop-empty-icon">🛒</div><p>Shopping list is empty</p><p style="font-size:0.75rem;margin-top:0.25rem;">Import from Mob or generate from your meal plan</p></div>`;
+  } else {
+    // Group by category
+    const grouped = {};
+    unchecked.forEach(item => {
+      const cat = item.category || 'Other';
+      if (!grouped[cat]) grouped[cat] = [];
+      grouped[cat].push(item);
+    });
+    
+    Object.entries(grouped).forEach(([cat, items]) => {
+      html += `<div class="shop-category"><div class="shop-cat-title">${cat}</div>`;
+      items.forEach(item => {
+        html += `<div class="shop-item" onclick="toggleShop('${item.id}')">
+          <div class="shop-check"><span class="shop-check-mark">✓</span></div>
+          <span class="shop-item-name">${item.item}</span>
+          ${item.recipeName ? `<span class="shop-item-from">${item.recipeName.split(' ').slice(0,2).join(' ')}</span>` : ''}
+        </div>`;
+      });
+      html += `</div>`;
+    });
+    
+    if (checked.length > 0) {
+      html += `<div class="shop-category"><div class="shop-cat-title">Done (${checked.length})</div>`;
+      checked.forEach(item => {
+        html += `<div class="shop-item done" onclick="toggleShop('${item.id}')">
+          <div class="shop-check"><span class="shop-check-mark">✓</span></div>
+          <span class="shop-item-name">${item.item}</span>
+        </div>`;
+      });
+      html += `</div>`;
+    }
+  }
+  
+  document.getElementById('shopContent').innerHTML = html;
+}
+
+async function toggleShop(id) {
+  // Optimistic UI
+  const item = state.shopping.find(i => i.id === id);
+  if (item) item.checked = !item.checked;
+  renderShop();
+  await apiPost({ action: 'toggleShoppingItem', id });
+}
+
+async function clearChecked() {
+  state.shopping = state.shopping.filter(i => !i.checked);
+  renderShop();
+  await apiPost({ action: 'clearCheckedItems' });
+  toast('Cleared ✓');
+}
+
+async function generateFromPlan() {
+  const weekStart = fmtDate(getMonday(state.weekOffset));
+  toast('Generating list...');
+  const res = await apiPost({ action: 'generateShoppingList', weekStart });
+  if (res.success) {
+    const shopRes = await apiGet('getShoppingList');
+    state.shopping = shopRes.items || [];
+    renderShop();
+    toast(`✅ ${res.added} items from this week's plan`);
+  } else {
+    toast(res.error || 'Failed');
+  }
+}
+
+function openImportModal() {
+  document.getElementById('importModal').classList.add('open');
+}
+
+async function importMobList() {
+  const text = document.getElementById('importArea').value.trim();
+  if (!text) return;
+  
+  const lines = text.split('\n');
+  const items = [];
+  let currentCat = '';
+  
+  lines.forEach(line => {
+    const t = line.trim();
+    if (!t) return;
+    if (MOB_CATS.includes(t.toLowerCase())) { currentCat = t; return; }
+    items.push({ item: t, category: currentCat, recipeName: 'Mob import' });
+  });
+  
+  if (items.length === 0) return;
+  
+  const res = await apiPost({ action: 'addShoppingItems', items });
+  if (res.success) {
+    const shopRes = await apiGet('getShoppingList');
+    state.shopping = shopRes.items || [];
+    renderShop();
+    closeModal('importModal');
+    document.getElementById('importArea').value = '';
+    toast(`✅ ${res.added} items imported`);
+  }
+}
+
+// ============================================
+// FAVOURITES
+// ============================================
+function renderFavs() {
+  const favs = state.recipes.filter(r => r.isFavourite);
+  let html = `<div class="fav-header">Saved Recipes (${state.recipes.length})</div>`;
+  html += `<div class="fav-grid">`;
+  state.recipes.forEach(r => {
+    const srcClass = r.source === 'mob' ? 'src-mob' : r.source === 'out' ? 'src-out' : 'src-own';
+    const srcLabel = r.source === 'mob' ? 'MOB' : r.source === 'out' ? 'OUT' : 'OURS';
+    html += `<div class="fav-card" onclick="openRecipe('${r.id}')">
+      <div class="fav-card-img">${r.emoji || '🍽️'}</div>
+      <div class="fav-card-body">
+        <div class="fav-card-name">${r.name}</div>
+        <div class="fav-card-meta">
+          ⏱ ${r.totalTime || '?'}
+          <span class="source-tag ${srcClass}" style="font-size:0.5rem;padding:2px 5px;">${srcLabel}</span>
+        </div>
+      </div>
+    </div>`;
+  });
+  html += `</div>`;
+  document.getElementById('favsContent').innerHTML = html;
+}
+
+// ============================================
+// HISTORY
+// ============================================
+function renderHistory() {
+  let html = `<div class="history-header">Cooking History</div>`;
+  if (state.history.length === 0) {
+    html += `<div class="shop-empty"><div class="shop-empty-icon">📖</div><p>No history yet</p><p style="font-size:0.75rem;margin-top:0.25rem;">Meals you cook will appear here</p></div>`;
+  } else {
+    state.history.forEach(h => {
+      html += `<div class="history-item">
+        <span class="history-day">${h.date ? new Date(h.date).toLocaleDateString('en-GB',{day:'numeric',month:'short'}) : ''}</span>
+        <span class="history-name">${h.recipeName}</span>
+        ${h.rating ? `<span style="color:var(--ochre);font-size:0.8rem;">${'★'.repeat(h.rating)}</span>` : ''}
+      </div>`;
+    });
+  }
+  document.getElementById('historyContent').innerHTML = html;
+}
+
+// ============================================
+// ADD MEAL MODAL
+// ============================================
+function openAddMealModal(preDate, preRecipeId) {
+  const dates = getWeekDates(state.weekOffset);
+  const sel = document.getElementById('mealDay');
+  sel.innerHTML = dates.map((d, i) =>
+    `<option value="${fmtDate(d)}" ${preDate && fmtDate(d) === preDate ? 'selected' : ''}>${DAY_FULL[i]} ${d.toLocaleDateString('en-GB',{day:'numeric',month:'short'})}</option>`
+  ).join('');
+  
+  const recipeSel = document.getElementById('recipeSelect');
+  recipeSel.innerHTML = '<option value="">— Pick a saved recipe —</option>' +
+    state.recipes.map(r => `<option value="${r.id}" ${preRecipeId === r.id ? 'selected' : ''}>${r.emoji} ${r.name}</option>`).join('');
+  
+  document.getElementById('addMealModal').classList.add('open');
+}
+
+function pickSrc(src) {
+  state.currentSrc = src;
+  document.querySelectorAll('#addMealModal .pill').forEach(p => p.classList.toggle('on', p.dataset.src === src));
+}
+
+async function saveMeal() {
+  const date = document.getElementById('mealDay').value;
+  const mealType = document.getElementById('mealTypeSelect').value;
+  const recipeId = document.getElementById('recipeSelect').value;
+  const customName = document.getElementById('customMealName').value.trim();
+  const customLink = document.getElementById('customMealLink').value.trim();
+  
+  let recipeName = customName;
+  if (recipeId && !customName) {
+    const r = state.recipes.find(r => r.id === recipeId);
+    if (r) recipeName = r.name;
+  }
+  
+  if (!recipeName) { toast('Enter a meal name'); return; }
+  
+  const res = await apiPost({
+    action: 'setMealPlan',
+    date, mealType, recipeId, recipeName, customNote: customLink
+  });
+  
+  if (res.success) {
+    // Update local state
+    const existing = state.plan.findIndex(p => p.date === date && p.mealType === mealType);
+    const entry = { date, mealType, recipeId, recipeName, customNote: customLink };
+    if (existing >= 0) state.plan[existing] = entry;
+    else state.plan.push(entry);
+    
+    renderAll();
+    closeModal('addMealModal');
+    document.getElementById('customMealName').value = '';
+    document.getElementById('customMealLink').value = '';
+    toast(`✅ ${recipeName} added`);
+  }
+}
+
+// ============================================
+// UI HELPERS
+// ============================================
+function switchView(id, btn) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(n => n.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  btn.classList.add('active');
+  
+  const showHeader = id === 'viewPlan';
+  document.getElementById('mainHeader').style.display = showHeader ? '' : 'none';
+  document.getElementById('fab').style.display = id === 'viewPlan' ? '' : 'none';
+}
+
+function closeModal(id) {
+  document.getElementById(id).classList.remove('open');
+}
+
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+function renderAll() {
+  renderPlan();
+  renderShop();
+  renderFavs();
+  renderHistory();
+}
+
+// ============================================
+// INIT
+// ============================================
+loadAll();
+</script>
+</body>
+</html>
